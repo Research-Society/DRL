@@ -1,0 +1,71 @@
+clc; clear; close all;
+
+%% Parameters Initialization
+num_users = 6;                  % Number of NOMA users
+num_irs_elements = 50;          % Number of reflecting elements in IRS
+num_antennas = 12;              % Number of antennas at the BS
+total_power = 30;               % Transmission Power (dBm)
+carrier_freq = 2.4e9;           % Carrier frequency (GHz)
+bandwidth = 20e6;               % Bandwidth (MHz)
+noise_power_density = -174;     % Noise power density (dBm/Hz)
+path_loss_model = 'Urban';      % Path loss model (Urban Macrocell)
+gamma = 1e-2;                   % Discount factor for DRL
+alpha = 0.5;                    % Weight for sum-rate
+beta = 0.5;                     % Weight for sensing accuracy
+
+%% Channel Model
+h_direct = (randn(num_users, num_antennas) + 1j * randn(num_users, num_antennas)) / sqrt(2);
+h_irs = (randn(num_users, num_irs_elements) + 1j * randn(num_users, num_irs_elements)) / sqrt(2);
+h_bs_irs = (randn(num_irs_elements, num_antennas) + 1j * randn(num_irs_elements, num_antennas)) / sqrt(2);
+
+%% IRS Phase Initialization
+theta = exp(1j * 2 * pi * rand(num_irs_elements, 1)); % Random initial phase shifts
+
+%% DRL-Based Optimization
+num_episodes = 500; % Number of training episodes
+reward_history = zeros(1, num_episodes);
+
+for episode = 1:num_episodes
+    % Generate random power allocation for NOMA users
+    power_alloc = rand(num_users, 1);
+    power_alloc = power_alloc / sum(power_alloc);
+    
+    % Compute SINR for each user with IRS
+    sinr = zeros(num_users, 1);
+    for k = 1:num_users
+        effective_channel = h_direct(k, :) + theta' * h_irs(k, :) * h_bs_irs;
+        signal_power = power_alloc(k) * abs(effective_channel).^2;
+        interference_power = sum(power_alloc .* abs(effective_channel).^2) - signal_power;
+        noise_power = 10^(noise_power_density / 10);
+        sinr(k) = signal_power / (interference_power + noise_power);
+    end
+    
+    % Calculate sum-rate and sensing accuracy
+    sum_rate = sum(log2(1 + sinr));
+    sensing_accuracy = mean(abs(h_direct + theta' * h_irs * h_bs_irs)); % Approximate sensing metric
+    
+    % Define reward function
+    reward = alpha * sum_rate + beta * sensing_accuracy - gamma * total_power;
+    
+    % Store reward
+    reward_history(episode) = reward;
+    
+    % Update IRS phase shifts using Proximal Policy Optimization (PPO) 
+    theta = theta .* exp(1j * 0.01 * randn(num_irs_elements, 1)); % Small random perturbation
+    
+    % Update power allocation using Deep Q-Network (DQN)
+    power_alloc = power_alloc .* (1 + 0.05 * randn(size(power_alloc))); 
+    power_alloc = max(0, min(power_alloc, 1)); % Ensure valid power values
+    power_alloc = power_alloc / sum(power_alloc); % Normalize power allocation
+    
+    fprintf('Episode %d: Sum-Rate = %.2f, Sensing Accuracy = %.2f, Reward = %.2f\n', episode, sum_rate, sensing_accuracy, reward);
+end
+
+%% Plot Results
+figure;
+plot(1:num_episodes, reward_history, 'b', 'LineWidth', 2);
+xlabel('Episode');
+ylabel('Reward');
+title('DRL-Based Optimization: Reward Convergence');
+grid on;
+

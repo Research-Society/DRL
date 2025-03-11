@@ -1,0 +1,55 @@
+clc; clear; close all;
+
+%% Simulation Parameters
+numUsers = 6;               % Number of Users
+numIRS = 50;                % Number of IRS Reflecting Elements
+numBSantennas = 12;         % Number of Base Station Antennas
+transmitPower = 30;         % Transmit Power in dBm
+carrierFreq = 2.4e9;        % Carrier Frequency (Hz)
+bandwidth = 20e6;           % Bandwidth (Hz)
+noisePowerDensity = -174;   % Noise Power Density (dBm/Hz)
+pathLossExp = 3;            % Path Loss Exponent
+
+%% Define Environment Layout
+figure;
+hold on;
+xlim([-10, 100]);
+ylim([-10, 50]);
+title('Simulation Environment Visualization', 'FontSize', 14);
+xlabel('X-axis Position (m)', 'FontSize', 12);
+ylabel('Y-axis Position (m)', 'FontSize', 12);
+grid on;
+
+%% Base Station (BS) Representation
+BS_pos = [10, 25];  % Base Station Position
+scatter(BS_pos(1), BS_pos(2), 200, 'r', 'filled'); 
+text(BS_pos(1), BS_pos(2) + 2, 'Base Station (BS)', 'FontSize', 12, 'HorizontalAlignment', 'center');
+
+%% IRS Representation
+IRS_pos = [50, 25];  % IRS Position
+scatter(repmat(IRS_pos(1), numIRS, 1), linspace(10, 40, numIRS), 40, 'g', 'filled');
+text(IRS_pos(1), IRS_pos(2) + 5, 'IRS Elements', 'FontSize', 12, 'HorizontalAlignment', 'center');
+
+%% Users Representation
+user_x = linspace(70, 90, numUsers);
+user_y = repmat(15, 1, numUsers);
+scatter(user_x, user_y, 100, 'b', 'filled');
+for i = 1:numUsers
+    text(user_x(i), user_y(i) + 1.5, sprintf('User-%d', i), 'FontSize', 10, 'HorizontalAlignment', 'center');
+end
+
+%% Connections (BS -> IRS -> Users)
+for i = 1:numUsers
+    plot([BS_pos(1), IRS_pos(1)], [BS_pos(2), IRS_pos(2)], 'k--', 'LineWidth', 1); % BS to IRS
+    plot([IRS_pos(1), user_x(i)], [IRS_pos(2), user_y(i)], 'k--', 'LineWidth', 1); % IRS to Users
+end
+
+%% Base Station Antennas Representation
+scatter(repmat(BS_pos(1), numBSantennas, 1), linspace(22, 28, numBSantennas), 30, 'm', 'filled');
+text(BS_pos(1) + 2, BS_pos(2), sprintf('%d BS Antennas', numBSantennas), 'FontSize', 10, 'Color', 'm');
+
+%% Legend
+legend({'Base Station', 'IRS Elements', 'Users', 'BS Antennas', 'BS to IRS Link', 'IRS to User Link'}, ...
+       'Location', 'northeastoutside', 'FontSize', 10);
+
+hold off;

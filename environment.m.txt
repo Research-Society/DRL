@@ -1,0 +1,32 @@
+clc; clear; close all;
+
+%% Simulation Parameters
+numUsers = 6;               % Number of Users
+numIRS = 50;                % Number of IRS Reflecting Elements
+numBSantennas = 12;         % Number of Base Station Antennas
+transmitPower = 30;         % Transmit Power in dBm
+carrierFreq = 2.4e9;        % Carrier Frequency (Hz)
+bandwidth = 20e6;           % Bandwidth (Hz)
+noisePowerDensity = -174;   % Noise Power Density (dBm/Hz)
+pathLossExp = 3;            % Path Loss Exponent
+
+%% Channel Generation
+% Randomly generating channel coefficients for Users, IRS, and Base Station
+h_BS_Users = (randn(numUsers, numBSantennas) + 1j * randn(numUsers, numBSantennas)) / sqrt(2);
+h_BS_IRS = (randn(numIRS, numBSantennas) + 1j * randn(numIRS, numBSantennas)) / sqrt(2);
+h_IRS_Users = (randn(numUsers, numIRS) + 1j * randn(numUsers, numIRS)) / sqrt(2);
+
+%% IRS Phase Shift Initialization
+theta = exp(1j * 2 * pi * rand(numIRS, 1)); % Random phase shifts
+
+%% Beamforming and Power Allocation
+beamformingMatrix = sqrt(transmitPower / numUsers) * (randn(numBSantennas, numUsers) + 1j * randn(numBSantennas, numUsers)) / sqrt(2);
+
+%% Compute Received Signal-to-Interference-Plus-Noise Ratio (SINR)
+% Direct Link Contribution
+signalPower_direct = abs(h_BS_Users * beamformingMatrix).^2;
+
+% IRS-Assisted Link Contribution
+signalPower_IRS = abs(h_IRS_Users * diag(theta) * h_BS_IRS * beamformingMatrix).^2;
+
+% Total Signal
