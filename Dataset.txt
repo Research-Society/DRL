@@ -1,0 +1,1 @@
+Dear Sir/Mam, there is no dataset is used in this work. We have created a simulation network environment in MATLAB. The simulation, as mentioned in table 2, of the proposed DRL-based IRS-assisted NOMA-ISAC Framework is conducted in MATLAB, modeling a multi-user NOMA network where an IRS assists both wireless communication and target sensing.
